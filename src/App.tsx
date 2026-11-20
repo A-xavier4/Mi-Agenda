@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Task, ActiveTab, Priority } from './types';
-import { Plus, Trash2, Edit2, CheckSquare, Square, Code2, BookOpenCheck, ListTodo, Search, Sparkles, RotateCcw, Calendar, AlertCircle, X, Check, PieChart } from 'lucide-react';
+import { Plus, Trash2, Edit2, CheckSquare, Square, Code2, BookOpenCheck, ListTodo, Search, Sparkles, RotateCcw, Calendar, AlertCircle, X, Check, PieChart, Filter } from 'lucide-react';
 import { KOTLIN_CODE } from './data/kotlinCode';
 
 export default function App() {
@@ -22,6 +22,7 @@ export default function App() {
   const [inputDate, setInputDate] = useState(getTodayString());
   const [inputPriority, setInputPriority] = useState<Priority>('Media');
   const [searchQuery, setSearchQuery] = useState('');
+  const [priorityFilter, setPriorityFilter] = useState<'Todas' | Priority>('Todas');
   const [errorMessage, setErrorMessage] = useState('');
 
   // Edit State
@@ -113,13 +114,16 @@ export default function App() {
     ]);
     setInputText('');
     setSearchQuery('');
+    setPriorityFilter('Todas');
     setErrorMessage('');
   };
 
-  // Filter tasks in real time based on search query
-  const filteredTasks = tasks.filter((task) =>
-    task.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter tasks in real time based on search query and priority filter
+  const filteredTasks = tasks.filter((task) => {
+    const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesPriority = priorityFilter === 'Todas' || task.priority === priorityFilter;
+    return matchesSearch && matchesPriority;
+  });
 
   // Progress calculations
   const totalTasksCount = tasks.length;
@@ -270,6 +274,27 @@ export default function App() {
                   )}
                 </div>
 
+                {/* Priority Filter Selector (Todas, Alta, Media, Baja) */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 flex-shrink-0">
+                  <div className="flex items-center text-slate-400 text-[11px] font-medium pr-1">
+                    <Filter className="w-3.5 h-3.5 mr-1" />
+                    <span>Prioridad:</span>
+                  </div>
+                  {(['Todas', 'Alta', 'Media', 'Baja'] as const).map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => setPriorityFilter(p)}
+                      className={`px-3 py-1 rounded-xl text-[11px] font-medium transition-all flex-shrink-0 ${
+                        priorityFilter === p
+                          ? 'bg-emerald-600 text-white shadow-xs'
+                          : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      {p === 'Todas' ? 'Todas' : p}
+                    </button>
+                  ))}
+                </div>
+
                 {/* Add Task Form with Date & Priority */}
                 <form onSubmit={handleAddTask} className="bg-white dark:bg-slate-800/80 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-2.5 flex-shrink-0">
                   <div>
@@ -333,12 +358,12 @@ export default function App() {
                   <div className="my-auto text-center py-8 px-4">
                     <Sparkles className="w-8 h-8 mx-auto text-emerald-500 mb-2 opacity-80" />
                     <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      {searchQuery ? 'No se encontraron actividades' : 'Sin actividades'}
+                      {searchQuery || priorityFilter !== 'Todas' ? 'No se encontraron actividades' : 'Sin actividades'}
                     </p>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-3">
-                      {searchQuery ? 'Prueba con otro término de búsqueda.' : 'Crea tu primera tarea arriba.'}
+                      {searchQuery || priorityFilter !== 'Todas' ? 'Prueba cambiando los filtros de búsqueda o prioridad.' : 'Crea tu primera tarea arriba.'}
                     </p>
-                    {!searchQuery && (
+                    {!searchQuery && priorityFilter === 'Todas' && (
                       <button
                         onClick={resetDefaultTasks}
                         className="text-[11px] text-emerald-600 font-semibold bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800"
@@ -464,16 +489,16 @@ export default function App() {
           {activeTab === 'explanation' && (
             <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs">
               <div className="bg-gradient-to-br from-emerald-600 to-teal-700 text-white rounded-2xl p-3.5 shadow-md">
-                <h3 className="font-bold text-xs mb-1">Tarjeta de Resumen y Progreso</h3>
+                <h3 className="font-bold text-xs mb-1">Selector de Filtros por Prioridad</h3>
                 <p className="text-[11px] text-emerald-100 leading-relaxed">
-                  Se añadió una tarjeta de resumen superior con una barra de progreso visual y un círculo de porcentaje que se actualiza en tiempo real al marcar actividades como completadas.
+                  Se añadió una barra de filtros debajo del buscador para alternar rápidamente entre ver todas las tareas o filtrarlas por prioridad (Alta, Media y Baja).
                 </p>
               </div>
 
               <div className="space-y-2">
                 <div className="bg-white dark:bg-slate-800 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400 block mb-0.5">Barra de Progreso y Porcentaje</span>
-                  <p className="text-slate-600 dark:text-slate-400 text-[11px]">Calcula automáticamente el porcentaje completado (<code className="bg-slate-100 dark:bg-slate-900 px-1 rounded">completadas / totales * 100</code>).</p>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400 block mb-0.5">Filtrado Combinado</span>
+                  <p className="text-slate-600 dark:text-slate-400 text-[11px]">Los filtros de prioridad operan en conjunto con la búsqueda en tiempo real para mayor precisión.</p>
                 </div>
               </div>
             </div>
